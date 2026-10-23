@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LLVM 18 and CUDA Toolkit
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 18 all
+          sudo apt-get update
+          sudo apt-get install -y llvm-18-dev clang-18 cmake build-essential
+
+      - name: Install CUDA Toolkit (for nvcc)
+        run: |
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+          sudo dpkg -i cuda-keyring_1.1-1_all.deb
+          sudo apt-get update
+          sudo apt-get install -y cuda-toolkit-13-4
+          echo 'export PATH=/usr/local/cuda-13.4/bin:$PATH' >> $GITHUB_ENV
+          echo 'export LD_LIBRARY_PATH=/usr/local/cuda-13.4/lib64:$LD_LIBRARY_PATH' >> $GITHUB_ENV
+
+      - name: Configure with CMake
+        run: |
+          cmake -B build -DCMAKE_CXX_COMPILER=clang++-18 -DLLVM_DIR=/usr/lib/llvm-18/lib/cmake/llvm
+
+      - name: Build
+        run: |
+          cmake --build build -j$(nproc)
+
+      - name: Create test kernel
+        run: |
+          cat > test.cu << 'EOF'
+          __global__ void add_kernel(float* a, float* b, float* c, int n) {
+              int i = blockIdx.x * blockDim.x + threadIdx.x;
+              if (i < n) c[i] = a[i] + b[i];
+          }
+          EOF
+
+      - name: Compile test CUBIN
+        run: |
+          /usr/local/cuda-13.4/bin/nvcc -cubin -arch=sm_90 -g -o test.cubin test.cu
+
+      - name: Run inspector (text mode)
+        run: |
+          ./build/cuinspect test.cubin
+
+      - name: Run inspector (JSON mode)
+        run: |
+          ./build/cuinspect test.cubin --json
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install LLVM
+        run: |
+          choco install llvm --version=18.1.8 -y
+          echo "C:\Program Files\LLVM\bin" >> $GITHUB_PATH
+
+      - name: Install CUDA Toolkit
+        run: |
+          choco install cuda --version=13.4.1 -y
+          echo "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.4\bin" >> $GITHUB_PATH
+
+      - name: Install CMake
+        run: |
+          choco install cmake -y
+
+      - name: Configure with CMake (Visual Studio)
+        run: |
+          cmake -B build -G "Visual Studio 17 2022" -A x64 -DLLVM_DIR="C:\Program Files\LLVM\lib\cmake\llvm"
+
+      - name: Build
+        run: |
+          cmake --build build --config Release
+
+      - name: Create test kernel
+        run: |
+          @"
+          __global__ void add_kernel(float* a, float* b, float* c, int n) {
+              int i = blockIdx.x * blockDim.x + threadIdx.x;
+              if (i < n) c[i] = a[i] + b[i];
+          }
+          "@ > test.cu
+
+      - name: Compile test CUBIN
+        run: |
+          nvcc -cubin -arch=sm_90 -g -o test.cubin test.cu
+
+      - name: Run inspector (text mode)
+        run: |
+          .\build\Release\cuinspect.exe test.cubin
+
+      - name: Run inspector (JSON mode)
+        run: |
+          .\build\Release\cuinspect.exe test.cubin --json

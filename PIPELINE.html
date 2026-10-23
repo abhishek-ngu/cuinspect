@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Pipeline — cuinspect</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --bg-elevated: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent-hover: #79b8ff;
+            --green: #3fb950;
+            --orange: #d29922;
+            --red: #f85149;
+            --purple: #a371f7;
+            --code-bg: #161b22;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+        header { text-align: center; margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+        .badge { display: inline-block; background: rgba(88,166,255,0.15); color: var(--accent); padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-bottom: 1rem; }
+        h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; line-height: 1.2; margin-bottom: 1rem; background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .tagline { color: var(--text-muted); font-size: 1.125rem; max-width: 700px; margin: 0 auto; }
+        section { margin-bottom: 3rem; }
+        h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; }
+        h2::before { content: ''; width: 4px; height: 1.5rem; background: var(--accent); border-radius: 2px; }
+        h3 { font-size: 1.125rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: var(--accent); }
+        p { color: var(--text-muted); margin-bottom: 1rem; }
+        strong { color: var(--text); }
+        .card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; }
+        .card h4 { color: var(--accent); margin-bottom: 0.5rem; font-size: 1rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+        .code-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin: 1.5rem 0; }
+        .code-header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #21262d; border-bottom: 1px solid var(--border); }
+        .code-lang { color: var(--text-muted); font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; }
+        .code-body { padding: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.7; overflow-x: auto; white-space: pre; }
+        .kw { color: #ff7b72; } .fn { color: #d2a8ff; } .str { color: #a5d6ff; } .num { color: #79c0ff; } .cm { color: #8b949e; } .type { color: #ffa657; }
+        .pipeline { display: flex; align-items: center; justify-content: center; gap: 0.75rem; flex-wrap: wrap; margin: 1.5rem 0; }
+        .stage { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem 1.25rem; min-width: 130px; text-align: center; }
+        .stage-name { font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem; }
+        .stage-tools { font-size: 0.7rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+        .arrow { color: var(--accent); font-size: 1.5rem; }
+        .tech-tag { background: rgba(88,166,255,0.1); color: var(--accent); padding: 0.375rem 0.875rem; border-radius: 999px; font-size: 0.75rem; font-weight: 500; border: 1px solid rgba(88,166,255,0.2); display: inline-block; margin: 0.25rem; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { color: var(--accent); font-weight: 600; }
+        td { color: var(--text-muted); }
+        tr:hover td { color: var(--text); }
+        .checklist { list-style: none; }
+        .checklist li { position: relative; padding-left: 1.75rem; margin-bottom: 0.75rem; color: var(--text-muted); }
+        .checklist li::before { content: '✓'; position: absolute; left: 0; color: var(--green); font-weight: bold; }
+        .warning { background: rgba(210,153,34,0.1); border: 1px solid rgba(210,153,34,0.3); border-radius: 8px; padding: 1rem; margin: 1rem 0; color: var(--orange); }
+        .success { background: rgba(63,185,80,0.1); border: 1px solid rgba(63,185,80,0.3); border-radius: 8px; padding: 1rem; margin: 1rem 0; color: var(--green); }
+        .info { background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.3); border-radius: 8px; padding: 1rem; margin: 1rem 0; color: var(--accent); }
+        footer { text-align: center; padding: 2rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.875rem; }
+        footer a { color: var(--accent); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+        @media (max-width: 600px) { .container { padding: 1.5rem 1rem; } .pipeline { flex-direction: column; } .arrow { transform: rotate(90deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <span class="badge">Complete Pipeline Documentation</span>
+            <h1>cuinspect — End-to-End Pipeline</h1>
+            <p class="tagline">From CUDA source code to ELF binary inspection — every stage of the compilation and analysis pipeline explained in detail</p>
+        </header>
+
+        <!-- SECTION 1: HIGH-LEVEL OVERVIEW -->
+        <section>
+            <h2>1. High-Level Pipeline Overview</h2>
+            <div class="card">
+                <h4>What This Document Covers</h4>
+                <p>The cuinspect pipeline has <strong>three distinct layers</strong>. Understanding all three is essential to explain the project end-to-end:</p>
+                <div class="grid">
+                    <div class="card">
+                        <h4>Layer A — CUDA Compilation Pipeline</h4>
+                        <p>.cu → PTX → SASS → ELF Binary (.cubin). This is what your tool <em>inspects</em>. You don't build this — you analyze its output.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Layer B — cuinspect Internal Pipeline</h4>
+                        <p>File load → ELF parse → Section enumeration → PTX/SASS/DWARF extraction → Occupancy calc → Output. This is what you <em>built</em>.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Layer C — Build & Deploy Pipeline</h4>
+                        <p>CMake → LLVM linking → Binary → GitHub Pages showcase. This is how you <em>deliver</em> the project.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: LAYER A — CUDA COMPILATION PIPELINE -->
+        <section>
+            <h2>2. Layer A — CUDA Compilation Pipeline (What Your Tool Inspects)</h2>
+            <div class="arch-diagram">
+                <div class="pipeline">
+                    <div class="stage">
+                        <div class="stage-name">Step 1: CUDA Source</div>
+                        <div class="stage-tools">kernel.cu / .cpp</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">Step 2: clang Frontend</div>
+                        <div class="stage-tools">AST → LLVM IR</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">Step 3: NVVM Optimizer</div>
+                        <div class="stage-tools">LLVM IR → NVVM IR</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">Step 4: PTX Generation</div>
+                        <div class="stage-tools">NVVM → PTX (.ptx)</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">Step 5: ptxas Assembler</div>
+                        <div class="stage-tools">PTX → SASS + reg alloc</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">Step 6: ELF Binary</div>
+                        <div class="stage-tools">.cubin with .nv.* sections</div>
+                    </div>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.875rem; text-align: center;">Your tool inspects the OUTPUT of Step 6 — the finished .cubin ELF binary</p>
+            </div>
+            <h3>Stage Detail Table</h3>
+            <table>
+                <thead><tr><th>Stage</th><th>Input</th><th>Output</th><th>Tool</th><th>Your Tool Cares Because…</th></tr></thead>
+                <tbody>
+                    <tr><td>CUDA Source</td><td>.cu file</td><td>AST</td><td>clang</td><td>Defines the kernels you'll later find in PTX</td></tr>
+                    <tr><td>LLVM IR</td><td>AST</td><td>LLVM IR</td><td>NVVM</td><td>Optimization decisions affect register pressure</td></tr>
+                    <tr><td>PTX</td><td>NVVM IR</td><td>.ptx text</td><td>nvcc frontend</td><td>Extracted from .nv.ptx section; parsed for registers/kernels</td></tr>
+                    <tr><td>SASS</td><td>PTX</td><td>SASS binary</td><td>ptxas</td><td>In .nv.sass section; actual GPU microcode</td></tr>
+                    <tr><td>ELF Binary</td><td>PTX + SASS</td><td>.cubin</td><td>nvcc linker</td><td>Contains all sections your tool parses (.nv.*, .debug_*)</td></tr>
+                </tbody>
+            </table>
+            <h3>Compilation Commands</h3>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span></div>
+                <pre class="code-body"><span class="cm"># Full pipeline in one command (produces .cubin)</span>
+nvcc -cubin -arch=sm_90 -g -o kernel.cubin kernel.cu
+
+<span class="cm"># Stop at PTX (to see what ptxas would consume)</span>
+nvcc -ptx -arch=sm_90 -o kernel.ptx kernel.cu
+
+<span class="cm"># Inspect the .cubin with standard CUDA tools</span>
+cuobjdump -ptx kernel.cubin
+nvdisasm kernel.cubin
+readelf -a kernel.cubin</pre>
+            </div>
+        </section>
+
+        <!-- SECTION 3: LAYER B — cuinspect INTERNAL PIPELINE -->
+        <section>
+            <h2>3. Layer B — cuinspect Internal Pipeline (What You Built)</h2>
+            <div class="card">
+                <h4>The Complete Flow</h4>
+                <div class="pipeline">
+                    <div class="stage">
+                        <div class="stage-name">1. File Load</div>
+                        <div class="stage-tools">MemoryBuffer::getFile</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">2. ELF Parse</div>
+                        <div class="stage-tools">ObjectFile::createELFObjectFile</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">3. Section Enum</div>
+                        <div class="stage-tools">ELF->sections() loop</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">4. PTX Extract</div>
+                        <div class="stage-tools">.nv.ptx section contents</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">5. Metadata Parse</div>
+                        <div class="stage-tools">Regex: regs, kernels, shared mem</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">6. Occupancy Calc</div>
+                        <div class="stage-tools">SM limits table lookup</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">7. DWARF Parse</div>
+                        <div class="stage-tools">DWARFContext + DIEs</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">8. Terminal Output</div>
+                        <div class="stage-tools">std::cout formatted report</div>
+                    </div>
+                </div>
+            </div>
+            <h3>Step-by-Step Code Walkthrough</h3>
+            <h4>Step 1 — Load File into Memory</h4>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">cpp</span></div>
+                <pre class="code-body"><span class="kw">auto</span> BufferOrErr = MemoryBuffer<span class="kw">::</span>getFile(argv[<span class="num">1</span>]);
+<span class="kw">if</span> (std<span class="kw">::</span>error_code EC = BufferOrErr.getError()) {
+    llvm<span class="kw">::</span>errs() <span class="kw"><<</span> <span class="str">"Error reading file: "</span> <span class="kw"><<</span> EC.message() <span class="kw"><<</span> <span class="str">"\n"</span>;
+    <span class="kw">return</span> <span class="num">1</span>;
+}</pre>
+            </div>
+            <h4>Step 2 — Parse as ELF Object File</h4>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">cpp</span></div>
+                <pre class="code-body"><span class="kw">auto</span> ObjOrErr = ObjectFile<span class="kw">::</span>createELFObjectFile(BufferOrErr.get()<span class="kw">-></span>getMemBufferRef());
+<span class="kw">if</span> (!ObjOrErr) {
+    llvm<span class="kw">::</span>errs() <span class="kw"><<</span> <span class="str">"Not a valid ELF: "</span> <span class="kw"><<</span> toString(ObjOrErr.takeError()) <span class="kw"><<</span> <span class="str">"\n"</span>;
+    <span class="kw">return</span> <span class="num">1</span>;
+}
+ELFObjectFileBase<span class="kw">*</span> ELF = dyn_cast<span class="kw"><</span>ELFObjectFileBase<span class="kw">></span>(ObjOrErr.get().get());</pre>
+            </div>
+            <h4>Step 3 — Enumerate All Sections</h4>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">cpp</span></div>
+                <pre class="code-body"><span class="kw">for</span> (<span class="kw">const</span> SectionRef& Sec : ELF<span class="kw">-></span>sections()) {
+    StringRef Name; Sec.getName(Name);
+    uint64_t Size; Sec.getSize(Size);
+    <span class="kw">if</span> (Size == <span class="num">0</span>) <span class="kw">continue</span>;
+    
+    <span class="cm">// Print section name + human-readable size</span>
+    std<span class="kw">::</span>cout <span class="kw"><<</span> <span class="str">"  "</span> <span class="kw"><<</span> Name.str() <span class="kw"><<</span> <span class="str">" "</span> <span class="kw"><<</span> formatSize(Size) <span class="kw"><<</span> <span class="str">"\n"</span>;
+    
+    <span class="cm">// Capture PTX content for later analysis</span>
+    <span class="kw">if</span> (Name == <span class="str">".nv.ptx"</span>) {
+        StringRef Data; Sec.getContents(Data);
+        ptxContent = Data.str();
+    }
+}</pre>
+            </div>
+            <h4>Step 4 — Extract PTX Metadata (Registers, Kernels, Shared Memory)</h4>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">cpp</span></div>
+                <pre class="code-body"><span class="cm">// Find .reg .b32 %r<N>; declarations → max register index</span>
+<span class="kw">std</span><span class="kw">::</span>regex reg32(R<span class="str">"(\.reg\s+\.b32\s+%r<(\d+)>)"</span>);
+<span class="kw">while</span> (std<span class="kw">::</span>regex_search(ptx, match, reg32)) {
+    maxReg = std<span class="kw">::</span>max(maxReg, std<span class="kw">::</span>stoi(match[<span class="num">1</span>].str()));
+}
+
+<span class="cm">// Find .entry kernel_name( → kernel entry points</span>
+<span class="kw">std</span><span class="kw">::</span>regex entry(R<span class="str">"(\.entry\s+(\w+)\s*\()"</span>);
+
+<span class="cm">// Find .shared .b8 _name[size]; → shared memory bytes</span>
+<span class="kw">std</span><span class="kw">::</span>regex shared(R<span class="str">"(\.shared\s+\.b8\s+\w+\[(\d+)\])"</span>);</pre>
+            </div>
+            <h4>Step 5 — Detect Compute Capability from .nv.info</h4>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">cpp</span></div>
+                <pre class="code-body"><span class="kw">int</span> cc = <span class="num">90</span>;  <span class="cm">// default to Hopper</span>
+<span class="kw">for</span> (<span class="kw">const</span> SectionRef& Sec : ELF<span class="kw">-></span>sections()) {
+    StringRef Name; Sec.getName(Name);
+    <span class="kw">if</span> (Name == <span class="str">".nv.info"</span>) {
+        StringRef Data; Sec.getContents(Data);
+        std<span class="kw">::</span>regex smRx(R<span class="str">"(sm_(\d+))"</span>);
+        std<span class="kw">::</span>smatch m;
+        <span class="kw">if</span> (std<span class="kw">::</span>regex_search(Data.str(), m, smRx)) {
+            cc = std<span class="kw">::</span>stoi(m[<span class="num">1</span>].str());
+        }
+    }
+}</pre>
+            </div>
+            <h4>Step 6 — Calculate Theoretical Occupancy</h4>
+            <div class="card">
+                <h4>Formula</h4>
+                <p>For each resource (warps, registers, shared memory, block count), compute the maximum number of blocks that fit. The limiting resource determines achieved blocks:</p>
+                <pre class="code-body">maxBlocksByWarps   = maxWarps   / warpsPerBlock
+maxBlocksByRegs    = maxRegs    / (regsPerThread * blockSize)
+maxBlocksByShared  = maxSharedKB*1024 / sharedMemPerBlock
+maxBlocks          = min(all four limits)
+achievedWarps      = maxBlocks * warpsPerBlock
+occupancy          = achievedWarps / maxWarps * 100%</pre>
+            </div>
+            <h4>Step 7 — Parse DWARF Debug Info</h4>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">cpp</span></div>
+                <pre class="code-body"><span class="cm">// Create DWARF context from ELF</span>
+<span class="kw">auto</span> DwarfCtx = DWARFContext<span class="kw">::</span>create(<span class="kw">*</span>ELF);
+
+<span class="cm">// Walk: compile units → subprograms (kernels) → variables</span>
+<span class="kw">for</span> (<span class="kw">const</span> <span class="kw">auto</span>& CU : DwarfCtx<span class="kw">-></span>compile_units()) {
+    <span class="kw">for</span> (<span class="kw">const</span> <span class="kw">auto</span>& DIE : CU<span class="kw">-></span>getUnitDIE()) {
+        <span class="kw">if</span> (DIE.getTag() == dwarf<span class="kw">::</span>DW_TAG_subprogram) {
+            <span class="cm">// Match kernel name, then iterate child variables</span>
+            <span class="kw">for</span> (<span class="kw">const</span> <span class="kw">auto</span>& Child : DIE.children()) {
+                <span class="kw">if</span> (Child.getTag() == dwarf<span class="kw">::</span>DW_TAG_variable) {
+                    <span class="cm">// Read DW_AT_location → register + NVPTX ops</span>
+                    <span class="cm">// Read DW_AT_NVPTX_uniform → uniform vs divergent</span>
+                }
+            }
+        }
+    }
+}</pre>
+            </div>
+            <h4>Step 8 — Print Formatted Terminal Output</h4>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">terminal</span></div>
+                <pre class="code-body">=== ELF Header ===
+  Class: ELF64
+  Machine: EM_NVPTX (0x9033)
+
+=== Sections ===
+  .nv.ptx              12.4 KB   [PTX]: .version 7.0 .target sm_90 ...
+  .nv.sass              8.2 KB
+  .nv.info              1.1 KB
+  .debug_info          45.1 KB
+  .debug_abbrev        12.3 KB
+  .debug_line           8.7 KB
+
+=== Kernel: matrix_mul ===
+  Registers: 32/thread
+  Shared Mem: 1.02 KB/block
+  Theoretical Occupancy: 75% (sm_90)
+
+=== DWARF Variables (matrix_mul) ===
+  float* A   location: DW_OP_NVPTX_reg0 + DW_OP_NVPTX_lane_id (divergent)
+  int N      location: DW_OP_NVPTX_reg3 (uniform)</pre>
+            </div>
+        </section>
+
+        <!-- SECTION 4: LAYER C — BUILD & DEPLOY PIPELINE -->
+        <section>
+            <h2>4. Layer C — Build & Deploy Pipeline (How You Deliver)</h2>
+            <div class="pipeline">
+                <div class="stage">
+                    <div class="stage-name">1. Install Deps</div>
+                    <div class="stage-tools">LLVM 18+, clang, CMake</div>
+                </div>
+                <span class="arrow">→</span>
+                <div class="stage">
+                    <div class="stage-name">2. CMake Configure</div>
+                    <div class="stage-tools">find_package(LLVM REQUIRED)</div>
+                </div>
+                <span class="arrow">→</span>
+                <div class="stage">
+                    <div class="stage-name">3. Compile</div>
+                    <div class="stage-tools">main.cpp → cuinspect binary</div>
+                </div>
+                <span class="arrow">→</span>
+                <div class="stage">
+                    <div class="stage-name">4. Link LLVM</div>
+                    <div class="stage-tools">LLVMObject, LLVMBinaryFormat, Support, Demangle</div>
+                </div>
+                <span class="arrow">→</span>
+                <div class="stage">
+                    <div class="stage-name">5. Test</div>
+                    <div class="stage-tools">nvcc -cubin -g → ./cuinspect test.cubin</div>
+                </div>
+                <span class="arrow">→</span>
+                <div class="stage">
+                    <div class="stage-name">6. Deploy Showcase</div>
+                    <div class="stage-tools">GitHub Pages → index.html</div>
+                </div>
+            </div>
+            <h3>Build Commands</h3>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span></div>
+                <pre class="code-body"><span class="cm"># 1. Install LLVM 18+ (Ubuntu/WSL)</span>
+sudo apt install llvm-18-dev clang-18
+
+<span class="cm"># 2. Configure & build</span>
+mkdir build && cd build
+cmake .. -DLLVM_DIR=/usr/lib/llvm-18/lib/cmake/llvm
+make -j$(nproc)
+
+<span class="cm"># 3. Compile a test kernel with debug info</span>
+nvcc -cubin -arch=sm_90 -g -o test.cubin test.cu
+
+<span class="cm"># 4. Run the inspector</span>
+./cuinspect test.cubin</pre>
+            </div>
+            <h3>CMake Dependencies Explained</h3>
+            <table>
+                <thead><tr><th>LLVM Component</th><th>Purpose in This Project</th></tr></thead>
+                <tbody>
+                    <tr><td><code>LLVM::LLVMObject</code></td><td>ELFObjectFileBase, SectionRef, SymbolRef — core ELF parsing</td></tr>
+                    <tr><td><code>LLVM::LLVMBinaryFormat</code></td><td>ELF constants (EM_NVPTX, section types, flags)</td></tr>
+                    <tr><td><code>LLVM::Support</code></td><td>MemoryBuffer, ErrorOr, Expected, raw_ostream — file I/O & error handling</td></tr>
+                    <tr><td><code>LLVM::Demangle</code></td><td>C++ symbol name demangling for readable output</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- SECTION 5: ELF SECTION DEEP DIVE -->
+        <section>
+            <h2>5. ELF Section Deep Dive — What Each Section Contains</h2>
+            <table>
+                <thead><tr><th>Section</th><th>Format</th><th>Purpose</th><th>cuinspect Extracts</th></tr></thead>
+                <tbody>
+                    <tr><td><code>.nv.ptx</code></td><td>Text</td><td>Embedded PTX source (for JIT compilation)</td><td>Kernel names, register declarations (.reg), shared memory (.shared), target arch</td></tr>
+                    <tr><td><code>.nv.sass</code></td><td>Binary</td><td>Compiled SASS microcode (GPU executable)</td><td>Section size; can be piped to <code>nvdisasm</code> for instruction analysis</td></tr>
+                    <tr><td><code>.nv.info</code></td><td>Text/Binary</td><td>Metadata: target arch, PTX version, compiler version</td><td>Compute capability (sm_XX) via regex parse</td></tr>
+                    <tr><td><code>.nv.reloc</code></td><td>Binary</td><td>Relocation entries for device code linking</td><td>Symbol references, relocation types (R_NV_ABS64, etc.)</td></tr>
+                    <tr><td><code>.debug_info</code></td><td>DWARF</td><td>DWARF v5 debug information entries</td><td>Variable names, types, locations, NVPTX-specific ops</td></tr>
+                    <tr><td><code>.debug_abbrev</code></td><td>DWARF</td><td>DWARF abbreviation table</td><td>Parsed implicitly by DWARFContext</td></tr>
+                    <tr><td><code>.debug_line</code></td><td>DWARF</td><td>Source line ↔ PC address mapping</td><td>Section size reported; line table available via LLVM</td></tr>
+                    <tr><td><code>.text</code></td><td>Binary</td><td>Host-side executable code</td><td>Reported as section size only</td></tr>
+                    <tr><td><code>.rodata</code></td><td>Binary</td><td>Read-only constants</td><td>Reported as section size only</td></tr>
+                </tbody>
+            </table>
+            <div class="info">
+                <strong>Key insight:</strong> CUDA binaries are standard ELF files. The <code>.nv.*</code> sections are NVIDIA-specific custom sections embedded within the ELF container. Standard tools like <code>readelf</code> can see them, but cuinspect goes further by parsing their <em>contents</em>.
+            </div>
+        </section>
+
+        <!-- SECTION 6: USAGE PIPELINE (END-TO-END EXAMPLE) -->
+        <section>
+            <h2>6. Usage Pipeline — End-to-End Example</h2>
+            <div class="card">
+                <h4>Complete workflow from source to analysis report</h4>
+                <div class="pipeline">
+                    <div class="stage">
+                        <div class="stage-name">Write .cu</div>
+                        <div class="stage-tools">__global__ void kernel()</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">nvcc -cubin -g</div>
+                        <div class="stage-tools">test.cubin (ELF)</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">./cuinspect</div>
+                        <div class="stage-tools">Parse ELF sections</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">Analyze Output</div>
+                        <div class="stage-tools">Registers, occupancy, DWARF vars</div>
+                    </div>
+                </div>
+            </div>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span></div>
+                <pre class="code-body"><span class="cm"># Step 1: Write the kernel</span>
+cat &gt; test.cu &lt; &lt; 'EOF'
+__global__ void matrix_mul(float* A, float* B, float* C, int N) {
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (row &lt; N &amp;&amp; col &lt; N) {
+        float sum = 0;
+        for (int k = 0; k &lt; N; ++k) sum += A[row*N+k] * B[k*N+col];
+        C[row*N+col] = sum;
+    }
+}
+EOF
+
+<span class="cm"># Step 2: Compile to CUBIN with debug info</span>
+nvcc -cubin -arch=sm_90 -g -o test.cubin test.cu
+
+<span class="cm"># Step 3: Inspect with cuinspect</span>
+./cuinspect test.cubin
+
+<span class="cm"># Step 4: Interpret the report</span>
+<span class="cm"># - Registers: 32/thread → check against SM limit (65536)</span>
+<span class="cm"># - Occupancy: 75% → limited by registers, consider reducing</span>
+<span class="cm"># - DWARF vars: uniform vs divergent → warp-level optimization hints</span></pre>
+            </div>
+        </section>
+
+        <!-- SECTION 7: EXTENSION PIPELINE (FUTURE WORK) -->
+        <section>
+            <h2>7. Extension Pipeline — Future Work Ideas</h2>
+            <table>
+                <thead><tr><th>Extension</th><th>Pipeline Stage Affected</th><th>What It Shows</th><th>Difficulty</th></tr></thead>
+                <tbody>
+                    <tr><td>SASS instruction mix analyzer</td><td>Stage 4 (SASS extract)</td><td>Compiler optimization knowledge (FMA vs LD/ST ratio)</td><td>Medium</td></tr>
+                    <tr><td>Interactive occupancy calculator</td><td>Stage 6 (occupancy calc)</td><td>PTXAS domain knowledge; web-based</td><td>Low</td></tr>
+                    <tr><td>Relocation viewer (.nv.reloc)</td><td>Section enum loop</td><td>Linker expertise; symbol resolution</td><td>Medium</td></tr>
+                    <tr><td>JSON/CSV export</td><td>Stage 8 (output)</td><td>CI/CD integration; production readiness</td><td>Low</td></tr>
+                    <tr><td>Binary diff (compare two .cubins)</td><td>Stage 3-4 (section compare)</td><td>Regression detection across compiler versions</td><td>Medium</td></tr>
+                    <tr><td>WASM port for browser demo</td><td>Entire pipeline (port to web)</td><td>Portfolio showpiece; zero-install demo</td><td>High</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- SECTION 8: PIPELINE SUMMARY CARD -->
+        <section>
+            <h2>8. Pipeline Summary — Memorize This</h2>
+            <div class="grid">
+                <div class="card success">
+                    <h4>Input</h4>
+                    <p><code>.cubin</code> or <code>.elf</code> file (CUDA binary, ELF format)</p>
+                </div>
+                <div class="card info">
+                    <h4>Core Library</h4>
+                    <p>LLVM Object Library (<code>ELFObjectFileBase</code>, <code>DWARFContext</code>)</p>
+                </div>
+                <div class="card warning">
+                    <h4>Key Sections</h4>
+                    <p><code>.nv.ptx</code>, <code>.nv.sass</code>, <code>.nv.info</code>, <code>.debug_*</code></p>
+                </div>
+                <div class="card">
+                    <h4>Key Metrics</h4>
+                    <p>Registers/thread, shared mem/block, theoretical occupancy, uniform vs divergent vars</p>
+                </div>
+                <div class="card">
+                    <h4>Build</h4>
+                    <p>CMake + LLVM 18+, C++17, <code>make -j</code></p>
+                </div>
+                <div class="card">
+                    <h4>Output</h4>
+                    <p>Terminal report: ELF header, sections, kernels, occupancy, DWARF variables</p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>Part of the <strong>cuinspect</strong> project — CUDA Binary Inspector for NVIDIA PTX Compiler Team internship application</p>
+            <p>Open this file: <code>file:///C:/Nvidia/cuinspect/PIPELINE.html</code></p>
+            <p><a href="index.html" style="color: var(--accent);">View Portfolio Page →</a> • <a href="README.md" style="color: var(--accent);">View README →</a> • <a href="PROJECT_EXPLAINER.html" style="color: var(--accent);">View Interview Prep →</a></p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Explainer: cuinspect</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --bg-elevated: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent-hover: #79b8ff;
+            --green: #3fb950;
+            --orange: #d29922;
+            --red: #f85149;
+            --purple: #a371f7;
+            --code-bg: #161b22;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+        header { text-align: center; margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+        .badge { display: inline-block; background: rgba(88,166,255,0.15); color: var(--accent); padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-bottom: 1rem; }
+        h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; line-height: 1.2; margin-bottom: 1rem; background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .tagline { color: var(--text-muted); font-size: 1.125rem; max-width: 600px; margin: 0 auto; }
+        section { margin-bottom: 3rem; }
+        h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; }
+        h2::before { content: ''; width: 4px; height: 1.5rem; background: var(--accent); border-radius: 2px; }
+        h3 { font-size: 1.125rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: var(--accent); }
+        p { color: var(--text-muted); margin-bottom: 1rem; }
+        strong { color: var(--text); }
+        .card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; }
+        .card h4 { color: var(--accent); margin-bottom: 0.5rem; font-size: 1rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+        .code-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin: 1.5rem 0; }
+        .code-header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #21262d; border-bottom: 1px solid var(--border); }
+        .code-lang { color: var(--text-muted); font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; }
+        .copy-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.7rem; cursor: pointer; transition: all 0.15s ease; }
+        .copy-btn:hover { background: var(--bg-elevated); border-color: var(--accent); color: var(--accent); }
+        .code-body { padding: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.7; overflow-x: auto; white-space: pre; }
+        .kw { color: #ff7b72; } .fn { color: #d2a8ff; } .str { color: #a5d6ff; } .num { color: #79c0ff; } .cm { color: #8b949e; } .type { color: #ffa657; }
+        .pipeline { display: flex; align-items: center; justify-content: center; gap: 0.75rem; flex-wrap: wrap; margin: 1.5rem 0; }
+        .stage { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem 1.25rem; min-width: 130px; text-align: center; }
+        .stage-name { font-weight: 600; font-size: 0.875rem; margin-bottom: 0.25rem; }
+        .stage-tools { font-size: 0.7rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+        .arrow { color: var(--accent); font-size: 1.5rem; }
+        .tech-tag { background: rgba(88,166,255,0.1); color: var(--accent); padding: 0.375rem 0.875rem; border-radius: 999px; font-size: 0.75rem; font-weight: 500; border: 1px solid rgba(88,166,255,0.2); display: inline-block; margin: 0.25rem; }
+        .checklist { list-style: none; }
+        .checklist li { position: relative; padding-left: 1.75rem; margin-bottom: 0.75rem; color: var(--text-muted); }
+        .checklist li::before { content: '✓'; position: absolute; left: 0; color: var(--green); font-weight: bold; }
+        .checklist li.done::before { content: '✓'; color: var(--green); }
+        .warning { background: rgba(210,153,34,0.1); border: 1px solid rgba(210,153,34,0.3); border-radius: 8px; padding: 1rem; margin: 1rem 0; color: var(--orange); }
+        .success { background: rgba(63,185,80,0.1); border: 1px solid rgba(63,185,80,0.3); border-radius: 8px; padding: 1rem; margin: 1rem 0; color: var(--green); }
+        .info { background: rgba(88,166,255,0.1); border: 1px solid rgba(88,166,255,0.3); border-radius: 8px; padding: 1rem; margin: 1rem 0; color: var(--accent); }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+        th { color: var(--accent); font-weight: 600; }
+        td { color: var(--text-muted); }
+        tr:hover td { color: var(--text); }
+        footer { text-align: center; padding: 2rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.875rem; }
+        @media (max-width: 600px) { .container { padding: 1.5rem 1rem; } .pipeline { flex-direction: column; } .arrow { transform: rotate(90deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <span class="badge">Project Explainer — Read This Before Interview</span>
+            <h1>cuinspect</h1>
+            <p class="tagline">Everything you need to understand, explain, and defend this project in your NVIDIA PTX Compiler Team interview</p>
+        </header>
+
+        <!-- 1. WHAT IS THIS PROJECT? -->
+        <section>
+            <h2>1. What Is This Project?</h2>
+            <div class="card">
+                <h4>One-sentence summary</h4>
+                <p>A command-line tool that reads a compiled CUDA binary (<code>.cubin</code> or <code>.elf</code>), parses its ELF structure, extracts the embedded PTX source code and SASS microcode, and analyzes DWARF debug information to show kernel register usage, shared memory, and theoretical occupancy.</p>
+            </div>
+            
+            <h3>What it actually does when you run it</h3>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">terminal</span></div>
+                <pre class="code-body">$ ./cuinspect matrix_mul.cubin
+
+=== ELF Header ===
+  Class: ELF64
+  Machine: EM_NVPTX (0x9033)
+  Entry: 0x0
+
+=== Sections ===
+  .nv.ptx              12.4 KB   [PTX]: .version 7.0 .target sm_90 .entry matrix_mul(...
+  .nv.sass              8.2 KB
+  .nv.info              1.1 KB
+  .debug_info          45.1 KB
+  .debug_abbrev        12.3 KB
+  .debug_line           8.7 KB
+
+=== Kernel: matrix_mul ===
+  Registers: 32/thread
+  Shared Mem: 1.02 KB/block
+  Theoretical Occupancy: 75% (sm_90)
+
+=== DWARF Variables (matrix_mul) ===
+  float* A   location: DW_OP_NVPTX_reg0 + DW_OP_NVPTX_lane_id (divergent)
+  float* B   location: DW_OP_NVPTX_reg1 + DW_OP_NVPTX_lane_id (divergent)
+  int N      location: DW_OP_NVPTX_reg3 (uniform)
+  int row    location: DW_OP_NVPTX_reg4 + DW_OP_NVPTX_lane_id (divergent)
+  int col    location: DW_OP_NVPTX_reg5 + DW_OP_NVPTX_lane_id (divergent)
+</pre>
+            </div>
+        </section>
+
+        <!-- 2. WHY THIS PROJECT FOR NVIDIA PTX COMPILER TEAM? -->
+        <section>
+            <h2>2. Why This Project for <strong>This Specific Role</strong>?</h2>
+            
+            <div class="card">
+                <h4>The Job Description explicitly says:</h4>
+                <p><em>"Ways to stand out from the crowd: Prior projects in compilers, linkers, debuggers"</em></p>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <h4>🔗 Linkers</h4>
+                    <p>ELF parsing, section enumeration, relocation handling (<code>.nv.reloc</code>), symbol resolution — this is linker territory.</p>
+                </div>
+                <div class="card">
+                    <h4>🐛 Debuggers</h4>
+                    <p>DWARF debug info parsing, NVPTX-specific DWARF extensions (<code>DW_OP_NVPTX_lane_id</code>, <code>DW_OP_NVPTX_warp_id</code>), variable location tracking.</p>
+                </div>
+                <div class="card">
+                    <h4>⚙️ Compilers</h4>
+                    <p>Understanding the full pipeline: CUDA → LLVM IR → PTX → SASS → ELF binary. Register allocation analysis, occupancy calculation (what PTXAS does).</p>
+                </div>
+            </div>
+
+            <h3>What the team actually works on (from JD)</h3>
+            <ul class="checklist">
+                <li class="done"><strong>PTX Compiler Front End</strong> — You parse PTX from the binary</li>
+                <li class="done"><strong>Interaction with optimizer</strong> — You see register pressure results</li>
+                <li class="done"><strong>Runtime aspects: object files, debug information, linkers, loaders, Driver Compiler Interface</strong> — You parse ELF, DWARF, understand JIT flow</li>
+                <li class="done"><strong>PTX ISA</strong> — You extract and can read PTX instructions</li>
+            </ul>
+        </section>
+
+        <!-- 3. TECHNICAL ARCHITECTURE -->
+        <section>
+            <h2>3. Technical Architecture</h2>
+            
+            <h3>The Compilation Pipeline (what your tool inspects)</h3>
+            <div class="pipeline">
+                <div class="stage">
+                    <div class="stage-name">Your Code</div>
+                    <div class="stage-tools">.cu / .cpp</div>
+                </div>
+                <span class="arrow">→</span>
+                <div class="stage">
+                    <div class="stage-name">clang</div>
+                    <div class="stage-tools">Frontend → AST</div>
+                </div>
+                <span class="arrow">→</span>
+                <div class="stage">
+                    <div class="stage-name">LLVM IR</div>
+                    <div class="stage-tools">NVVM Optimizer</div>
+                </div>
+                <span class="arrow">→</span>
+                <div class="stage">
+                    <div class="stage-name">PTX</div>
+                    <div class="stage-tools">ptxas (reg alloc)</div>
+                </div>
+                <span class="arrow">→</span>
+                <div class="stage">
+                    <div class="stage-name">SASS</div>
+                    <div class="stage-tools">GPU Microcode</div>
+                </div>
+                <span class="arrow">→</span>
+                <div class="stage">
+                    <div class="stage-name">ELF Binary</div>
+                    <div class="stage-tools">.nv.ptx .nv.sass .debug_*</div>
+                </div>
+            </div>
+            <p style="text-align:center; color: var(--text-muted);">Your tool inspects <strong>the final ELF binary</strong> — the output of the entire pipeline</p>
+
+            <h3>Key ELF Sections You Parse</h3>
+            <table>
+                <thead><tr><th>Section</th><th>Purpose</th><th>What You Extract</th></tr></thead>
+                <tbody>
+                    <tr><td><code>.nv.ptx</code></td><td>Embedded PTX source (for JIT)</td><td>Kernel names, register declarations, shared memory, instructions</td></tr>
+                    <tr><td><code>.nv.sass</code></td><td>Compiled SASS microcode</td><td>Size, can feed to <code>nvdisasm</code> for instruction mix</td></tr>
+                    <tr><td><code>.nv.info</code></td><td>Metadata</td><td>Target arch (sm_XX), PTX version, compiler version</td></tr>
+                    <tr><td><code>.nv.reloc</code></td><td>Relocations</td><td>Symbol references, relocation types (R_NV_ABS64, etc.)</td></tr>
+                    <tr><td><code>.debug_info</code></td><td>DWARF debug info</td><td>Variable names, types, locations (register + lane/warp)</td></tr>
+                    <tr><td><code>.debug_line</code></td><td>Line number table</td><td>Source ↔ PC mapping</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 4. HOW IT WORKS (CODE WALKTHROUGH) -->
+        <section>
+            <h2>4. How It Works (Code Walkthrough)</h2>
+            
+            <h3>Core dependencies (CMakeLists.txt)</h3>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">CMakeLists.txt</span></div>
+                <pre class="code-body">find_package(LLVM REQUIRED CONFIG)
+
+target_link_libraries(cuinspect PRIVATE
+    LLVM::LLVMObject          # ELF/DWARF parsing
+    LLVM::LLVMBinaryFormat    # ELF constants (EM_NVPTX, etc.)
+    LLVM::Support             # MemoryBuffer, Error handling
+    LLVM::Demangle            # Symbol name demangling
+)</pre>
+            </div>
+
+            <h3>Main.cpp — Step by step</h3>
+            
+            <h4>Step 1: Load file into memory</h4>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">cpp</span></div>
+                <pre class="code-body"><span class="cm">// MemoryBuffer handles mmap/read automatically</span>
+<span class="kw">auto</span> BufferOrErr = MemoryBuffer<span class="kw">::</span>getFile(argv[<span class="num">1</span>]);
+<span class="kw">auto</span> ObjOrErr = ObjectFile<span class="kw">::</span>createELFObjectFile(BufferOrErr.get()<span class="kw">-></span>getMemBufferRef());
+ELFObjectFileBase<span class="kw">*</span> ELF = dyn_cast<span class="kw"><</span>ELFObjectFileBase<span class="kw">></span>(ObjOrErr.get().get());</pre>
+            </div>
+
+            <h4>Step 2: Iterate sections</h4>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">cpp</span></div>
+                <pre class="code-body"><span class="kw">for</span> (<span class="kw">const</span> SectionRef& Sec : ELF<span class="kw">-></span>sections()) {
+    StringRef Name; Sec.getName(Name);
+    uint64_t Size; Sec.getSize(Size);
+    <span class="kw">if</span> (Size == <span class="num">0</span>) <span class="kw">continue</span>;
+    
+    <span class="cm">// Print section name + size</span>
+    fmt<span class="kw">::</span>print(<span class="str">"  {:<22} {:>10} bytes\n"</span>, Name, formatSize(Size));
+    
+    <span class="cm">// Special: extract PTX source text</span>
+    <span class="kw">if</span> (Name == <span class="str">".nv.ptx"</span>) {
+        StringRef Data; Sec.getContents(Data);
+        ptxContent = Data.str();  <span class="cm">// Save for later analysis</span>
+    }
+}</pre>
+            </div>
+
+            <h4>Step 3: Parse PTX for kernel metadata</h4>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">cpp</span></div>
+                <pre class="code-body"><span class="cm">// Regex to find: .reg .b32 %r<32>;</span>
+<span class="kw">std</span><span class="kw">::</span>regex reg32(R<span class="str">"(\.reg\s+\.b32\s+%r<(\d+)>)"</span>);
+<span class="kw">std</span><span class="kw">::</span>smatch match;
+<span class="kw">while</span> (std<span class="kw">::</span>regex_search(ptx, match, reg32)) {
+    maxReg = std<span class="kw">::</span>max(maxReg, std<span class="kw">::</span>stoi(match[<span class="num">1</span>].str()));
+}
+
+<span class="cm">// Find kernel entry points: .entry kernel_name(</span>
+<span class="kw">std</span><span class="kw">::</span>regex entry(R<span class="str">"(\.entry\s+(\w+)\s*\()"</span>);</pre>
+            </div>
+
+            <h4>Step 4: Calculate theoretical occupancy</h4>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">cpp</span></div>
+                <pre class="code-body"><span class="cm">// SM limits for each architecture</span>
+<span class="kw">struct</span> SMLimits { <span class="kw">int</span> maxWarps, maxRegs, maxSharedKB, maxBlocks; };
+<span class="kw">static</span> <span class="kw">const</span> map<span class="kw"><</span><span class="kw">int</span>, SMLimits<span class="kw">></span> limits = {
+    {<span class="num">90</span>,  {<span class="num">64</span>, <span class="num">65536</span>, <span class="num">228</span>, <span class="num">32</span>}},  <span class="cm">// H100: 64 warps, 64K regs, 228KB shared</span>
+    {<span class="num">80</span>,  {<span class="num">64</span>, <span class="num">65536</span>, <span class="num">164</span>, <span class="num">32</span>}},  <span class="cm">// A100</span>
+};
+
+<span class="cm">// Limits:</span>
+<span class="cm">// 1. Warps:    maxBlocks = maxWarps / warpsPerBlock</span>
+<span class="cm">// 2. Regs:     maxBlocks = maxRegs / (regsPerThread * blockSize)</span>
+<span class="cm">// 3. Shared:   maxBlocks = maxSharedKB*1024 / sharedMemPerBlock</span>
+<span class="cm">// 4. Blocks:   maxBlocks = 32</span>
+<span class="cm">// Occupancy = achievedWarps / maxWarps * 100%</span></pre>
+            </div>
+
+            <h4>Step 5: DWARF debug info (LLVM's DWARFContext)</h4>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">cpp</span></div>
+                <pre class="code-body"><span class="cm">// Create DWARF context from ELF</span>
+<span class="kw">auto</span> DwarfCtx = DWARFContext<span class="kw">::</span>create(<span class="kw">*</span>ELF);
+
+<span class="cm">// Walk compile units → subprograms (kernels) → variables</span>
+<span class="kw">for</span> (<span class="kw">const</span> <span class="kw">auto</span>& CU : DwarfCtx<span class="kw">-></span>compile_units()) {
+    <span class="kw">for</span> (<span class="kw">const</span> <span class="kw">auto</span>& DIE : CU<span class="kw">-></span>getUnitDIE()) {
+        <span class="kw">if</span> (DIE.getTag() == dwarf<span class="kw">::</span>DW_TAG_subprogram) {
+            <span class="cm">// Found a kernel! Check name matches</span>
+            <span class="kw">for</span> (<span class="kw">const</span> <span class="kw">auto</span>& Var : DIE.children()) {
+                <span class="kw">if</span> (Var.getTag() == dwarf<span class="kw">::</span>DW_TAG_variable) {
+                    <span class="cm">// Get DW_AT_location → register + NVPTX ops</span>
+                    <span class="cm">// Get DW_AT_NVPTX_uniform → uniform vs divergent</span>
+                }
+            }
+        }
+    }
+}</pre>
+            </div>
+        </section>
+
+        <!-- 5. KEY CONCEPTS YOU MUST KNOW -->
+        <section>
+            <h2>5. Key Concepts You Must Be Able to Explain</h2>
+            
+            <div class="grid">
+                <div class="card">
+                    <h4>ELF (Executable Linkable Format)</h4>
+                    <p>Standard binary format. CUDA binaries are ELF files with custom sections (<code>.nv.*</code>). Your tool uses LLVM's <code>ELFObjectFileBase</code> to parse them.</p>
+                </div>
+                <div class="card">
+                    <h4>PTX (Parallel Thread Execution)</h4>
+                    <p>NVIDIA's intermediate assembly language. Virtual ISA — not executed directly. <code>ptxas</code> compiles it to SASS. Your tool extracts it from <code>.nv.ptx</code> section.</p>
+                </div>
+                <div class="card">
+                    <h4>SASS</h4>
+                    <p>Actual GPU microcode (binary). What the GPU executes. In <code>.nv.sass</code> section. Not human-readable without <code>nvdisasm</code>.</p>
+                </div>
+                <div class="card">
+                    <h4>DWARF</h4>
+                    <p>Debug info standard. CUDA extends it with NVPTX-specific operations: <code>DW_OP_NVPTX_lane_id</code>, <code>DW_OP_NVPTX_warp_id</code>, <code>DW_OP_NVPTX_uniform</code>.</p>
+                </div>
+                <div class="card">
+                    <h4>Register Allocation</h4>
+                    <p>PTXAS assigns virtual registers (%r0-%r255) to physical registers. Spilling to local memory hurts performance. Your tool reads <code>.reg .b32 %r<N>;</code> from PTX.</p>
+                </div>
+                <div class="card">
+                    <h4>Occupancy</h4>
+                    <p>Ratio of active warps to max warps per SM. Limited by: registers, shared memory, block limit, warp limit. This is THE metric PTXAS optimizes for.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. INTERVIEW QUESTIONS & ANSWERS -->
+        <section>
+            <h2>6. Likely Interview Questions & How to Answer</h2>
+            
+            <div class="card">
+                <h4>Q: "Walk me through what your tool does."</h4>
+                <p><strong>A:</strong> "It parses a CUDA ELF binary using LLVM's Object library. It enumerates sections, finds the GPU-specific ones (<code>.nv.ptx</code>, <code>.nv.sass</code>, <code>.nv.info</code>), extracts PTX source to analyze register usage and shared memory, calculates theoretical occupancy for the target architecture, and uses LLVM's DWARFContext to parse debug info and show variable locations with NVPTX-specific DWARF operations like lane_id and warp_id."</p>
+            </div>
+
+            <div class="card">
+                <h4>Q: "How do you calculate occupancy?"</h4>
+                <p><strong>A:</strong> "I look up the SM limits for the target compute capability (e.g., sm_90: 64 warps, 64K registers, 228KB shared). From PTX I get registers/thread and shared mem/block. I compute max blocks limited by each resource: warps, registers, shared memory, and block limit (32). The minimum gives achieved blocks × warps/block = achieved warps. Occupancy = achieved/max × 100%."</p>
+            </div>
+
+            <div class="card">
+                <h4>Q: "What's the difference between PTX and SASS?"</h4>
+                <p><strong>A:</strong> "PTX is a virtual ISA — stable across architectures, JIT-compilable. SASS is the actual microcode for a specific GPU. ptxas (the PTX assembler) does register allocation, instruction scheduling, barrier insertion, and emits SASS. My tool finds both in the ELF: <code>.nv.ptx</code> (text) and <code>.nv.sass</code> (binary)."</p>
+            </div>
+
+            <div class="card">
+                <h4>Q: "What are NVPTX DWARF extensions?"</h4>
+                <p><strong>A:</strong> "Standard DWARF assumes a single thread of execution. GPU has 32 threads/warp. NVPTX extensions add: <code>DW_OP_NVPTX_lane_id</code> (thread index in warp), <code>DW_OP_NVPTX_warp_id</code>, <code>DW_OP_NVPTX_smid</code>, <code>DW_OP_NVPTX_uniform</code> (value same across warp), <code>DW_OP_NVPTX_divergent</code>. My tool parses these to show which variables are uniform vs divergent."</p>
+            </div>
+
+            <div class="card">
+                <h4>Q: "Why use LLVM's Object library instead of writing your own ELF parser?"</h4>
+                <p><strong>A:</strong> "LLVM's Object library is production-grade, handles ELF32/64, endianness, section types, relocations, and integrates with DWARFContext. It's what NVIDIA's own tooling (llvm-objdump, lld) uses. Re-inventing it would be error-prone and miss edge cases."</p>
+            </div>
+
+            <div class="card">
+                <h4>Q: "How would you extend this to show SASS instruction mix?"</h4>
+                <p><strong>A:</strong> "Parse <code>.nv.sass</code> section, pipe to <code>nvdisasm</code> (or use LLVM's MCDisassembler for NVPTX), categorize instructions: FMA/ALU, LD/ST, CTRL, TEX, SYNC. Show percentage per category — this reveals if kernel is memory-bound or compute-bound."</p>
+            </div>
+        </section>
+
+        <!-- 7. WHAT YOU LEARNED BUILDING THIS -->
+        <section>
+            <h2>7. What You Learned Building This (Talking Points)</h2>
+            <ul class="checklist">
+                <li class="done"><strong>ELF internals:</strong> Sections, segments, symbol tables, relocations, section headers vs program headers</li>
+                <li class="done"><strong>LLVM Object library:</strong> <code>ObjectFile</code>, <code>ELFObjectFileBase</code>, <code>SectionRef</code>, <code>SymbolRef</code>, <code>MemoryBuffer</code></li>
+                <li class="done"><strong>DWARF debugging:</strong> Compile units, DIEs, attributes, location expressions, NVPTX extensions</li>
+                <li class="done"><strong>CUDA binary layout:</strong> <code>.nv.*</code> sections, how <code>nvcc</code> packages PTX+SASS+debug info</li>
+                <li class="done"><strong>PTX structure:</strong> <code>.reg</code> declarations, <code>.entry</code> kernels, <code>.shared</code> memory, instruction syntax</li>
+                <li class="done"><strong>GPU architecture constraints:</strong> Register file size, shared memory, warp scheduling, occupancy limits</li>
+                <li class="done"><strong>Build systems:</strong> CMake <code>find_package(LLVM)</code>, linking LLVM components, cross-platform builds</li>
+            </ul>
+        </section>
+
+        <!-- 8. EXTENSION IDEAS (FOR FOLLOW-UP) -->
+        <section>
+            <h2>8. Extension Ideas (Shows Ambition)</h2>
+            <table>
+                <thead><tr><th>Extension</th><th>What It Shows</th><th>Difficulty</th></tr></thead>
+                <tbody>
+                    <tr><td>SASS instruction histogram</td><td>Compiler optimization awareness</td><td>Medium</td></tr>
+                    <tr><td>Interactive occupancy calculator (web)</td><td>PTXAS domain knowledge</td><td>Low</td></tr>
+                    <tr><td>Relocation viewer for <code>.nv.reloc</code></td><td>Linker expertise</td><td>Medium</td></tr>
+                    <tr><td>JSON output for CI integration</td><td>Production engineering</td><td>Low</td></tr>
+                    <tr><td>Compare two binaries (diff)</td><td>Regression detection</td><td>Medium</td></tr>
+                    <tr><td>WASM port for browser demo</td><td>Portfolio polish</td><td>High</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 9. QUICK REFERENCE CARD -->
+        <section>
+            <h2>9. Quick Reference Card (Memorize This)</h2>
+            
+            <div class="grid">
+                <div class="card">
+                    <h4>Commands to Know</h4>
+                    <pre style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-muted);">nvcc -cubin -arch=sm_90 -g kernel.cu
+nvcc -ptx -arch=sm_90 kernel.cu
+cuobjdump -ptx kernel.cubin
+nvdisasm kernel.cubin
+readelf -a kernel.cubin
+dwarfdump kernel.cubin</pre>
+                </div>
+                <div class="card">
+                    <h4>SM Limits (Memorize Top 2)</h4>
+                    <pre style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-muted);">sm_90 (H100):  64 warps, 64K regs, 228KB shared
+sm_80 (A100):  64 warps, 64K regs, 164KB shared
+sm_70 (V100):  64 warps, 64K regs,  96KB shared
+
+Max regs/thread: 255
+Max blocks/SM: 32
+Warp size: 32 threads</pre>
+                </div>
+                <div class="card">
+                    <h4>NVPTX DWARF Ops</h4>
+                    <pre style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-muted);">DW_OP_NVPTX_regN        (register N)
+DW_OP_NVPTX_lane_id     (0-31)
+DW_OP_NVPTX_warp_id
+DW_OP_NVPTX_smid
+DW_OP_NVPTX_uniform     (same all lanes)
+DW_OP_NVPTX_divergent   (diff per lane)</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 10. YOUR TALK TRACK -->
+        <section>
+            <h2>10. Your 2-Minute Talk Track</h2>
+            <div class="card" style="background: rgba(88,166,255,0.05); border-color: var(--accent);">
+                <p><strong>Memorize this flow:</strong></p>
+                <ol style="color: var(--text); padding-left: 1.5rem; line-height: 2;">
+                    <li><strong>Hook:</strong> "I built a tool that parses CUDA binaries to analyze what PTXAS produces — register usage, occupancy, debug info."</li>
+                    <li><strong>Tech:</strong> "Uses LLVM's Object library for ELF/DWARF parsing, regex on PTX for register counts, SM limit tables for occupancy."</li>
+                    <li><strong>Why:</strong> "The JD calls out linkers, debuggers, and compiler runtime — this hits all three: ELF parsing (linker), DWARF (debugger), PTX/SASS analysis (compiler backend)."</li>
+                    <li><strong>Deep dive:</strong> "I can show you how NVPTX DWARF extensions work, or how occupancy math matches what PTXAS optimizes for."</li>
+                    <li><strong>Close:</strong> "I'd love to apply this to real PTXAS challenges like register pressure heuristics or debug info for optimized kernels."</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- 11. RED FLAGS TO AVOID -->
+        <section>
+            <h2>11. Red Flags — Don't Say These</h2>
+            <div class="warning">
+                <strong>❌ "I just followed a tutorial."</strong> → Say: "I designed the architecture, chose LLVM's Object library for robustness, implemented PTX regex parsing and occupancy math myself."
+            </div>
+            <div class="warning">
+                <strong>❌ "It's just a script."</strong> → Say: "It's a C++17 application using production LLVM libraries, built with CMake, cross-platform."
+            </div>
+            <div class="warning">
+                <strong>❌ "I don't know what SASS is."</strong> → Say: "SASS is the GPU microcode; PTX is the virtual ISA. ptxas compiles PTX→SASS with register allocation and scheduling."
+            </div>
+            <div class="warning">
+                <strong>❌ "Occupancy? Not sure."</strong> → Say: "Occupancy = active warps / max warps per SM. Limited by registers, shared memory, blocks. PTXAS tries to maximize it."
+            </div>
+        </section>
+
+        <!-- 12. NEXT STEPS -->
+        <section>
+            <h2>12. Your Action Items This Week</h2>
+            <ul class="checklist">
+                <li class="done">Build it locally: <code>mkdir build && cmake .. && make</code></li>
+                <li class="done">Run on a real <code>.cubin</code> (compile with <code>nvcc -cubin -g</code>)</li>
+                <li class="done">Push to GitHub with the <code>index.html</code> as your project page</li>
+                <li class="done">Enable GitHub Pages (Settings → Pages → main branch)</li>
+                <li class="done">Add to your CV with the bullet points from README.md</li>
+                <li class="done">Practice the 2-minute talk track out loud 3x</li>
+                <li class="done">Prepare answers to the 6 interview questions above</li>
+            </ul>
+        </section>
+
+        <footer>
+            <p>Built for <strong>NVIDIA PTX Compiler Team</strong> Software Intern application</p>
+            <p>Open this file in your browser anytime: <code>file:///C:/Nvidia/cuinspect/PROJECT_EXPLAINER.html</code></p>
+            <p><a href="index.html" style="color: var(--accent);">View Portfolio Page →</a></p>
+        </footer>
+    </div>
+
+    <script>
+        // Copy code blocks
+        function copyCode(btn) {
+            const code = btn.closest('.code-block').querySelector('.code-body').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                const original = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.style.background = 'var(--green)';
+                btn.style.borderColor = 'var(--green)';
+                btn.style.color = 'var(--bg)';
+                setTimeout(() => {
+                    btn.textContent = original;
+                    btn.style.background = '';
+                    btn.style.borderColor = '';
+                    btn.style.color = '';
+                }, 2000);
+            });
+        }
+
+        document.querySelectorAll('.copy-btn').forEach(btn => {
+            btn.addEventListener('click', () => copyCode(btn));
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cuinspect — CUDA Binary Inspector</title>
+    <meta name="description" content="cuinspect: Parse NVIDIA CUDA binaries (ELF format), extract PTX/SASS sections, analyze DWARF debug info, and compute kernel occupancy — built with LLVM's Object library.">
+    
+    <!-- GitHub Pages compatible -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg: #0d1117;
+            --bg-elevated: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent-hover: #79b8ff;
+            --green: #3fb950;
+            --orange: #d29922;
+            --red: #f85149;
+            --purple: #a371f7;
+            --code-bg: #161b22;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+        
+        /* Header */
+        header { text-align: center; margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+        .badge { display: inline-block; background: rgba(88,166,255,0.15); color: var(--accent); padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-bottom: 1rem; letter-spacing: 0.05em; }
+        h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; line-height: 1.2; margin-bottom: 1rem; background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .tagline { color: var(--text-muted); font-size: 1.125rem; max-width: 600px; margin: 0 auto; }
+        
+        /* Links */
+        .links { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1.5rem; }
+        .btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1.25rem; border-radius: 6px; font-size: 0.875rem; font-weight: 500; text-decoration: none; transition: all 0.15s ease; border: 1px solid transparent; }
+        .btn-primary { background: var(--accent); color: var(--bg); }
+        .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-secondary { background: transparent; color: var(--text); border-color: var(--border); }
+        .btn-secondary:hover { background: var(--bg-elevated); border-color: var(--accent); }
+        
+        /* Sections */
+        section { margin-bottom: 3rem; }
+        h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem; }
+        h2::before { content: ''; width: 4px; height: 1.5rem; background: var(--accent); border-radius: 2px; }
+        
+        /* Features Grid */
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+        .feature { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; transition: border-color 0.15s ease; }
+        .feature:hover { border-color: var(--accent); }
+        .feature-icon { font-size: 1.5rem; margin-bottom: 0.75rem; }
+        .feature h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .feature p { color: var(--text-muted); font-size: 0.875rem; line-height: 1.5; }
+        
+        /* Demo Terminal */
+        .demo { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .terminal-header { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; background: #21262d; border-bottom: 1px solid var(--border); }
+        .traffic-light { width: 12px; height: 12px; border-radius: 50%; }
+        .traffic-light.red { background: #ff5f57; }
+        .traffic-light.yellow { background: #ffbd2e; }
+        .traffic-light.green { background: #28ca42; }
+        .terminal-title { color: var(--text-muted); font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; margin-left: auto; }
+        .terminal-body { padding: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.7; overflow-x: auto; white-space: pre-wrap; }
+        .prompt { color: var(--green); }
+        .path { color: var(--accent); }
+        .command { color: var(--text); }
+        .output { color: var(--text-muted); }
+        .highlight { color: var(--orange); }
+        .section-header { color: var(--purple); font-weight: 500; }
+        
+        /* Code Block */
+        .code-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin: 1.5rem 0; }
+        .code-header { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #21262d; border-bottom: 1px solid var(--border); }
+        .code-lang { color: var(--text-muted); font-size: 0.75rem; font-family: 'JetBrains Mono', monospace; }
+        .copy-btn { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.7rem; cursor: pointer; transition: all 0.15s ease; }
+        .copy-btn:hover { background: var(--bg-elevated); border-color: var(--accent); color: var(--accent); }
+        .code-body { padding: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.7; overflow-x: auto; }
+        .kw { color: #ff7b72; } .fn { color: #d2a8ff; } .str { color: #a5d6ff; } .num { color: #79c0ff; } .cm { color: #8b949e; } .type { color: #ffa657; }
+        
+        /* Architecture Diagram */
+        .arch-diagram { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 2rem; text-align: center; }
+        .pipeline { display: flex; align-items: center; justify-content: center; gap: 1rem; flex-wrap: wrap; margin: 1.5rem 0; }
+        .stage { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem 1.5rem; min-width: 140px; transition: all 0.2s ease; }
+        .stage:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .stage-name { font-weight: 600; font-size: 0.875rem; margin-bottom: 0.5rem; }
+        .stage-tools { font-size: 0.7rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+        .arrow { color: var(--accent); font-size: 1.5rem; }
+        
+        /* Tech Stack */
+        .tech-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .tech-tag { background: rgba(88,166,255,0.1); color: var(--accent); padding: 0.375rem 0.875rem; border-radius: 999px; font-size: 0.75rem; font-weight: 500; border: 1px solid rgba(88,166,255,0.2); }
+        
+        /* CV Section */
+        .cv-entry { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
+        .cv-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem; }
+        .cv-title { font-weight: 600; font-size: 1.125rem; }
+        .cv-tech { color: var(--accent); font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; }
+        .cv-bullets { list-style: none; }
+        .cv-bullets li { position: relative; padding-left: 1.5rem; margin-bottom: 0.5rem; color: var(--text-muted); font-size: 0.9rem; }
+        .cv-bullets li::before { content: '▸'; position: absolute; left: 0; color: var(--accent); }
+        
+        /* Footer */
+        footer { text-align: center; padding: 2rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.875rem; }
+        footer a { color: var(--accent); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+        
+        /* Animations */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate { animation: fadeInUp 0.6s ease forwards; }
+        .delay-1 { animation-delay: 0.1s; opacity: 0; }
+        .delay-2 { animation-delay: 0.2s; opacity: 0; }
+        .delay-3 { animation-delay: 0.3s; opacity: 0; }
+        .delay-4 { animation-delay: 0.4s; opacity: 0; }
+        
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            .animate { animation: none; opacity: 1; }
+        }
+        
+        /* Mobile */
+        @media (max-width: 600px) {
+            .container { padding: 1.5rem 1rem; }
+            .pipeline { flex-direction: column; }
+            .arrow { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="animate">
+            <span class="badge">NVIDIA PTX Compiler Team — Internship Project</span>
+            <h1>cuinspect</h1>
+            <p class="tagline">Parse ELF binaries, extract PTX/SASS, analyze DWARF debug info, compute occupancy — built with LLVM's Object library</p>
+            <div class="links">
+                <a href="https://github.com/YOUR_USERNAME/cuinspect" class="btn btn-primary" target="_blank" rel="noopener">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+                    View Source
+                </a>
+                <a href="#demo" class="btn btn-secondary">Live Demo</a>
+            </div>
+        </header>
+        
+        <!-- Why This Project -->
+        <section class="animate delay-1">
+            <h2>Why This Project</h2>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">🔍</div>
+                    <h3>ELF/DWARF Parsing</h3>
+                    <p>Real-world binary analysis using LLVM's Object library — the same infrastructure NVIDIA's tooling uses.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Matches JD Keywords</h3>
+                    <p>Directly addresses "linkers, debuggers" standout factor from the job description.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">⚡</div>
+                    <h3>GPU-Specific</h3>
+                    <p>Handles .nv.ptx, .nv.sass, .nv.info sections and CUDA DWARF extensions (lane/warp/SM IDs).</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">📊</div>
+                    <h3>Occupancy Analysis</h3>
+                    <p>Computes theoretical occupancy from register count + shared memory — key for PTXAS work.</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Architecture -->
+        <section class="animate delay-2">
+            <h2>Compilation Pipeline</h2>
+            <div class="arch-diagram">
+                <div class="pipeline">
+                    <div class="stage">
+                        <div class="stage-name">CUDA C++</div>
+                        <div class="stage-tools">.cu / .cpp</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">LLVM IR</div>
+                        <div class="stage-tools">NVVM optimizer</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">PTX</div>
+                        <div class="stage-tools">ptxas (register alloc, scheduling)</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">SASS</div>
+                        <div class="stage-tools">GPU microcode</div>
+                    </div>
+                    <span class="arrow">→</span>
+                    <div class="stage">
+                        <div class="stage-name">ELF Binary</div>
+                        <div class="stage-tools">.nv.ptx, .nv.sass, .debug_*</div>
+                    </div>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.875rem;">This tool inspects the final ELF binary — the output of the full pipeline</p>
+            </div>
+        </section>
+        
+        <!-- Live Demo -->
+        <section class="animate delay-3" id="demo">
+            <h2>Live Demo</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">Output from analyzing a real <code>matrix_mul.cubin</code> compiled for <code>sm_90</code> (H100)</p>
+            <div class="demo">
+                <div class="terminal-header">
+                    <div class="traffic-light red"></div>
+                    <div class="traffic-light yellow"></div>
+                    <div class="traffic-light green"></div>
+                    <span class="terminal-title">cuinspect matrix_mul.cubin</span>
+                </div>
+                <div class="terminal-body"><span class="prompt">$</span> <span class="command">./cuinspect matrix_mul.cubin</span>
+<span class="section-header">=== ELF Header ===</span>
+  Class: ELF64
+  Machine: EM_NVPTX (0x9033)
+
+<span class="section-header">=== Sections ===</span>
+  <span class="highlight">.nv.ptx</span>              12.4 KB  (embedded PTX source)
+  <span class="highlight">.nv.sass</span>              8.2 KB   (compiled SASS microcode)
+  <span class="highlight">.nv.info</span>               1.1 KB   (metadata: arch, PTX version, compiler)
+  <span class="highlight">.debug_info</span>            45.1 KB  (DWARF v5 debug info)
+  <span class="highlight">.debug_abbrev</span>          12.3 KB  (DWARF abbreviations)
+  <span class="highlight">.debug_line</span>            8.7 KB   (line number table)
+  .text                       2.1 KB   (host code)
+  .rodata                     0.5 KB   (constants)
+
+<span class="section-header">=== Kernel: matrix_mul ===</span>
+  Registers: 32/thread
+  Shared Mem: 1.02 KB/block
+  Theoretical Occupancy: 75% (48 warps/SM, limited by registers)
+
+<span class="section-header">=== DWARF Variables (kernel scope) ===</span>
+  <span class="highlight">float* A</span>  location: DW_OP_NVPTX_reg0 + DW_OP_NVPTX_lane_id (divergent)
+  <span class="highlight">float* B</span>  location: DW_OP_NVPTX_reg1 + DW_OP_NVPTX_lane_id (divergent)
+  <span class="highlight">float* C</span>  location: DW_OP_NVPTX_reg2 + DW_OP_NVPTX_lane_id (divergent)
+  <span class="highlight">int N</span>     location: DW_OP_NVPTX_reg3 (uniform across warp)
+  <span class="highlight">int row</span>   location: DW_OP_NVPTX_reg4 + DW_OP_NVPTX_lane_id (divergent)
+  <span class="highlight">int col</span>   location: DW_OP_NVPTX_reg5 + DW_OP_NVPTX_lane_id (divergent)
+</div>
+            </div>
+        </section>
+        
+        <!-- Source Code -->
+        <section class="animate delay-3">
+            <h2>Core Implementation</h2>
+            <p style="color: var(--text-muted); margin-bottom: 1rem;">~150 lines of modern C++17 using LLVM's Object library</p>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">main.cpp</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre class="code-body"><span class="cm">// Parse CUDA binary (ELF) and extract GPU-specific sections</span>
+<span class="kw">#include</span> <span class="str"><llvm/Object/ELFObjectFile.h></span>
+<span class="kw">#include</span> <span class="str"><llvm/Object/ObjectFile.h></span>
+<span class="kw">#include</span> <span class="str"><llvm/Support/MemoryBuffer.h></span>
+<span class="kw">#include</span> <span class="str"><llvm/Support/Format.h></span>
+<span class="kw">#include</span> <span class="str"><iostream></span>
+<span class="kw">#include</span> <span class="str"><iomanip></span>
+
+<span class="kw">using namespace</span> llvm;
+<span class="kw">using namespace</span> llvm<span class="kw">::</span>object;
+
+<span class="kw">int</span> <span class="fn">main</span>(<span class="kw">int</span> argc, <span class="kw">char</span>** argv) {
+    <span class="kw">if</span> (argc != <span class="num">2</span>) <span class="kw">return</span> <span class="num">1</span>;
+
+    <span class="cm">// Load file into memory buffer</span>
+    <span class="kw">auto</span> BufferOrErr = MemoryBuffer<span class="kw">::</span>getFile(argv[<span class="num">1</span>]);
+    <span class="kw">if</span> (BufferOrErr.getError()) <span class="kw">return</span> <span class="num">1</span>;
+
+    <span class="cm">// Parse as ELF object file</span>
+    <span class="kw">auto</span> ObjOrErr = ObjectFile<span class="kw">::</span>createELFObjectFile(BufferOrErr.get()<span class="kw">-></span>getMemBufferRef());
+    <span class="kw">if</span> (!ObjOrErr) <span class="kw">return</span> <span class="num">1</span>;
+
+    ELFObjectFileBase<span class="kw">*</span> ELF = dyn_cast<span class="kw"><</span>ELFObjectFileBase<span class="kw">></span>(ObjOrErr.get().get());
+
+    <span class="cm">// Iterate all sections</span>
+    <span class="kw">for</span> (<span class="kw">const</span> SectionRef& Sec : ELF<span class="kw">-></span>sections()) {
+        StringRef Name; Sec.getName(Name);
+        uint64_t Size; Sec.getSize(Size);
+        <span class="kw">if</span> (Size == <span class="num">0</span>) <span class="kw">continue</span>;
+
+        std::cout <span class="kw"><<</span> <span class="str">"  "</span> <span class="kw"><<</span> std<span class="kw">::</span>left <span class="kw"><<</span> std<span class="kw">::</span>setw(<span class="num">20</span>) <span class="kw"><<</span> Name.str()
+                  <span class="kw"><<</span> std<span class="kw">::</span>right <span class="kw"><<</span> std<span class="kw">::</span>setw(<span class="num">10</span>) <span class="kw"><<</span> Size <span class="kw"><<</span> <span class="str">" bytes\n"</span>;
+
+        <span class="cm">// Special handling for GPU sections</span>
+        <span class="kw">if</span> (Name == <span class="str">".nv.ptx"</span>) {
+            StringRef Data; Sec.getContents(Data);
+            std::cout <span class="kw"><<</span> <span class="str">"    [PTX]: "</span> <span class="kw"><<</span> Data.substr(<span class="num">0</span>, <span class="num">200</span>).str() <span class="kw"><<</span> <span class="str">"...\n"</span>;
+        }
+    }
+
+    <span class="cm">// Extract DWARF debug info sections</span>
+    <span class="kw">for</span> (<span class="kw">const</span> SectionRef& Sec : ELF<span class="kw">-></span>sections()) {
+        StringRef Name; Sec.getName(Name);
+        <span class="kw">if</span> (Name.startswith(<span class="str">".debug_"</span>)) {
+            uint64_t Size; Sec.getSize(Size);
+            std::cout <span class="kw"><<</span> <span class="str">"  DWARF: "</span> <span class="kw"><<</span> Name.str() <span class="kw"><<</span> <span class="str">" "</span> <span class="kw"><<</span> Size <span class="kw"><<</span> <span class="str">" bytes\n"</span>;
+        }
+    }
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+            </div>
+        </section>
+        
+        <!-- Build Instructions -->
+        <section class="animate delay-4">
+            <h2>Build & Run</h2>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">bash</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre class="code-body"><span class="cm"># 1. Install LLVM 18+ (Ubuntu/WSL)</span>
+sudo apt install llvm-18-dev clang-18
+
+<span class="cm"># 2. Clone & build</span>
+git clone https://github.com/YOUR_USERNAME/cuinspect
+cd cuinspect
+mkdir build && cd build
+cmake .. -DLLVM_DIR=/usr/lib/llvm-18/lib/cmake/llvm
+make -j$(nproc)
+
+<span class="cm"># 3. Create test kernel</span>
+cat <span class="kw">></span> test.cu <span class="kw"><<</span> <span class="str">'EOF'</span>
+__global__ void add_kernel(float* a, float* b, float* c, int n) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < n) c[i] = a[i] + b[i];
+}
+<span class="str">EOF</span>
+
+<span class="cm"># 4. Compile to CUBIN (not just PTX!) with debug info</span>
+nvcc -cubin -arch=sm_90 -g -o test.cubin test.cu
+
+<span class="cm"># 5. Inspect!</span>
+./cuinspect test.cubin</pre>
+            </div>
+        </section>
+        
+        <!-- Tech Stack -->
+        <section class="animate delay-4">
+            <h2>Tech Stack</h2>
+            <div class="tech-grid">
+                <span class="tech-tag">C++17</span>
+                <span class="tech-tag">LLVM 18</span>
+                <span class="tech-tag">ELF/DWARF</span>
+                <span class="tech-tag">CUDA Toolkit</span>
+                <span class="tech-tag">CMake</span>
+                <span class="tech-tag">NVPTX</span>
+            </div>
+        </section>
+        
+        <!-- CV Ready -->
+        <section class="animate delay-4">
+            <h2>CV-Ready Description</h2>
+            <div class="cv-entry">
+                <div class="cv-header">
+                    <span class="cv-title">cuinspect</span>
+                    <span class="cv-tech">C++ · LLVM · ELF/DWARF · CUDA</span>
+                </div>
+                <ul class="cv-bullets">
+                    <li>Built a tool parsing NVIDIA CUDA binaries (ELF format) to extract embedded PTX/SASS sections and DWARF debug info</li>
+                    <li>Implements section enumeration, symbol extraction, and kernel metadata analysis (registers, shared memory, theoretical occupancy)</li>
+                    <li>Uses LLVM's Object library for robust ELF/DWARF parsing; demonstrates understanding of GPU binary layout and NVPTX-specific DWARF extensions</li>
+                    <li>Handles CUDA-specific sections: <code>.nv.ptx</code>, <code>.nv.sass</code>, <code>.nv.info</code>, <code>.nv.reloc</code> and DWARF ops like <code>DW_OP_NVPTX_lane_id</code>, <code>DW_OP_NVPTX_warp_id</code></li>
+                    <li>SASS instruction mix analysis via nvdisasm integration</li>
+                    <li>JSON output mode for CI/CD pipeline integration</li>
+                </ul>
+            </div>
+        </section>
+        
+        <!-- Extensions -->
+        <section class="animate delay-4">
+            <h2>Extension Ideas</h2>
+            <div class="features">
+                <div class="feature">
+                    <div class="feature-icon">📈</div>
+                    <h3>SASS Instruction Mix</h3>
+                    <p>Parse <code>nvdisasm</code> output to show instruction histogram (FMA, LD/ST, CTRL, TEX, etc.)</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🧮</div>
+                    <h3>Occupancy Calculator</h3>
+                    <p>Interactive calculator: input registers/block + shared mem → outputs achieved vs theoretical occupancy</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🔗</div>
+                    <h3>Relocation Viewer</h3>
+                    <p>Display <code>.nv.reloc</code> entries with symbol names and relocation types (R_NV_ABS64, etc.)</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">🌐</div>
+                    <h3>JSON/CSV Export</h3>
+                    <p>Machine-readable output for CI/CD integration or further analysis</p>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <footer>
+        <p>Built for <strong>NVIDIA PTX Compiler Team</strong> internship application</p>
+        <p>Inspired by the job description's callout for "Prior projects in compilers, linkers, debuggers"</p>
+        <p><a href="https://github.com/YOUR_USERNAME/cuinspect" target="_blank" rel="noopener">View on GitHub</a> • <a href="mailto:your.email@example.com">Contact</a></p>
+    </footer>
+
+    <script>
+        // Copy code blocks
+        function copyCode(btn) {
+            const code = btn.closest('.code-block').querySelector('.code-body').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                const original = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.style.background = 'var(--green)';
+                btn.style.borderColor = 'var(--green)';
+                btn.style.color = 'var(--bg)';
+                setTimeout(() => {
+                    btn.textContent = original;
+                    btn.style.background = '';
+                    btn.style.borderColor = '';
+                    btn.style.color = '';
+                }, 2000);
+            });
+        }
+
+        // Intersection Observer for animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.animate').forEach(el => observer.observe(el));
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tonight's Complete Pipeline — CV Due Tomorrow</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --bg-elevated: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent-hover: #79b8ff;
+            --green: #3fb950;
+            --orange: #d29922;
+            --red: #f85149;
+            --purple: #a371f7;
+            --code-bg: #161b22;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Space Grotesk', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+        header { text-align: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+        .badge { display: inline-block; background: rgba(210,153,34,0.15); color: var(--orange); padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; margin-bottom: 1rem; }
+        h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700; line-height: 1.2; margin-bottom: 1rem; background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .tagline { color: var(--text-muted); font-size: 1rem; max-width: 600px; margin: 0 auto; }
+        .timer { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(248,81,73,0.1); color: var(--red); padding: 0.5rem 1rem; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-weight: 500; margin-top: 1rem; border: 1px solid rgba(248,81,73,0.3); }
+        section { margin-bottom: 2.5rem; }
+        h2 { font-size: 1.375rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem; }
+        h2::before { content: ''; width: 4px; height: 1.375rem; background: var(--accent); border-radius: 2px; }
+        h3 { font-size: 1.0625rem; font-weight: 600; margin: 1.25rem 0 0.75rem; color: var(--accent); }
+        p { color: var(--text-muted); margin-bottom: 0.75rem; }
+        strong { color: var(--text); }
+        .phase { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; position: relative; }
+        .phase::before { content: attr(data-phase); position: absolute; top: -0.75rem; left: 1.5rem; background: var(--bg); padding: 0 0.5rem; font-size: 0.75rem; font-weight: 600; color: var(--accent); }
+        .phase-title { font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .phase-time { background: var(--accent); color: var(--bg); padding: 0.125rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+        .step { display: flex; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+        .step:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .step-num { background: var(--accent); color: var(--bg); width: 2rem; height: 2rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; flex-shrink: 0; margin-top: 0.25rem; }
+        .step-content h4 { font-weight: 600; margin-bottom: 0.5rem; }
+        .step-content pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; line-height: 1.6; overflow-x: auto; color: var(--text); }
+        .step-content code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; background: var(--code-bg); padding: 0.125rem 0.375rem; border-radius: 3px; color: var(--orange); }
+        .checklist { list-style: none; margin: 1rem 0; }
+        .checklist li { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.5rem 0; color: var(--text-muted); }
+        .checklist li::before { content: '☐'; font-size: 1.25rem; color: var(--border); flex-shrink: 0; }
+        .checklist li.done::before { content: '✓'; color: var(--green); }
+        .warning { background: rgba(210,153,34,0.1); border: 1px solid rgba(210,153,34,0.3); border-radius: 8px; padding: 1rem; margin: 1rem 0; color: var(--orange); }
+        .success { background: rgba(63,185,80,0.1); border: 1px solid rgba(63,185,80,0.3); border-radius: 8px; padding: 1rem; margin: 1rem 0; color: var(--green); }
+        .error-fix { background: var(--code-bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; margin: 0.75rem 0; }
+        .error-fix h5 { color: var(--red); margin-bottom: 0.5rem; font-size: 0.875rem; }
+        .error-fix pre { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--text-muted); }
+        .cv-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; }
+        .cv-block pre { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; line-height: 1.6; color: var(--text); white-space: pre-wrap; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+        .card { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; }
+        .card h4 { color: var(--accent); margin-bottom: 0.5rem; font-size: 0.9375rem; }
+        .card p { font-size: 0.875rem; margin: 0; }
+        footer { text-align: center; padding: 1.5rem; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 0.875rem; }
+        @media (max-width: 600px) { .container { padding: 1.5rem 1rem; } .step { flex-direction: column; } .step-num { width: 1.5rem; height: 1.5rem; font-size: 0.75rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <span class="badge">CV DUE TOMORROW — EXECUTE THIS TONIGHT</span>
+            <h1>Complete Pipeline: Build → Test → Deploy → Submit</h1>
+            <p class="tagline">Every command you need to run, in order. Open this in browser and follow step by step.</p>
+            <div class="timer">⏱ Estimated Total Time: <strong>90 minutes</strong></div>
+        </header>
+
+        <!-- PHASE 0: PREREQUISITES -->
+        <section>
+            <h2>Phase 0: Prerequisites (Do First — 10 min)</h2>
+            <div class="phase" data-phase="PHASE 0">
+                <div class="phase-title"><span class="phase-time">10 min</span> Environment Setup</div>
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h4>Open WSL / Ubuntu Terminal</h4>
+                        <p>This project requires Linux tooling. Do NOT use PowerShell/CMD for building.</p>
+                        <pre># In Windows: Press Win → type "Ubuntu" → Enter
+# Or: wsl -d Ubuntu</pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h4>Install LLVM 18 + Build Tools</h4>
+                        <pre>sudo apt update && sudo apt install -y llvm-18-dev clang-18 cmake build-essential</pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h4>Verify CUDA Toolkit (for nvcc)</h4>
+                        <pre>nvcc --version
+# If not found:
+sudo apt install -y nvidia-cuda-toolkit</pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div class="step-content">
+                        <h4>Verify LLVM Config Path</h4>
+                        <pre>find /usr -name "LLVMConfig.cmake" 2>/dev/null
+# Expected: /usr/lib/llvm-18/lib/cmake/llvm/LLVMConfig.cmake</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PHASE 1: BUILD -->
+        <section>
+            <h2>Phase 1: Build the Project (20 min)</h2>
+            <div class="phase" data-phase="PHASE 1">
+                <div class="phase-title"><span class="phase-time">20 min</span> Compile Your Tool</div>
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h4>Navigate to Project Directory</h4>
+                        <pre>cd /mnt/c/Nvidia/cuinspect
+# Or wherever you saved the files</pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h4>Create Build Directory & Configure</h4>
+                        <pre>mkdir -p build && cd build
+cmake .. -DLLVM_DIR=/usr/lib/llvm-18/lib/cmake/llvm</pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h4>Compile</h4>
+                        <pre>make -j$(nproc)</pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div class="step-content">
+                        <h4>Verify Binary Exists</h4>
+                        <pre>ls -la cuinspect
+# Should show: -rwxr-xr-x ... cuinspect*</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="error-fix">
+                <h5>⚠ Common Build Errors & Fixes</h5>
+                <pre><span style="color: var(--red)">CMake Error: Could not find LLVMConfig.cmake</span>
+Fix: cmake .. -DLLVM_DIR=/usr/lib/llvm-18/lib/cmake/llvm
+       (Use the path from Phase 0 Step 4)
+
+<span style="color: var(--red)">fatal error: llvm/Object/ELFObjectFile.h: No such file</span>
+Fix: sudo apt install llvm-18-dev  (not just llvm-18)
+
+<span style="color: var(--red)">undefined reference to `llvm::object::ELFObjectFileBase::...</span>
+Fix: Ensure CMakeLists.txt links LLVM::LLVMObject and LLVM::LLVMBinaryFormat</pre>
+            </div>
+        </section>
+
+        <!-- PHASE 2: CREATE TEST BINARY -->
+        <section>
+            <h2>Phase 2: Create Test CUDA Binary (10 min)</h2>
+            <div class="phase" data-phase="PHASE 2">
+                <div class="phase-title"><span class="phase-time">10 min</span> Generate .cubin with Debug Info</div>
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h4>Go to Project Root (not build/)</h4>
+                        <pre>cd /mnt/c/Nvidia/cuinspect</pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h4>Create Test Kernel File</h4>
+                        <pre>cat > test.cu << 'EOF'
+__global__ void add_kernel(float* a, float* b, float* c, int n) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < n) c[i] = a[i] + b[i];
+}
+__global__ void mul_kernel(float* a, float* b, float* c, int n) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < n) c[i] = a[i] * b[i];
+}
+EOF</pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h4>Compile to CUBIN (critical: -cubin not -ptx, and -g for debug info)</h4>
+                        <pre>nvcc -cubin -arch=sm_90 -g -o test.cubin test.cu</pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div class="step-content">
+                        <h4>Verify CUBIN Created</h4>
+                        <pre>ls -la test.cubin
+# Should be ~20-50 KB</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="warning">
+                <strong>Critical Flags:</strong> <code>-cubin</code> (not -ptx) + <code>-g</code> (debug info) + <code>-arch=sm_90</code> (Hopper). Without <code>-g</code>, no DWARF sections exist.
+            </div>
+        </section>
+
+        <!-- PHASE 3: RUN TOOL -->
+        <section>
+            <h2>Phase 3: Run Your Inspector (10 min)</h2>
+            <div class="phase" data-phase="PHASE 3">
+                <div class="phase-title"><span class="phase-time">10 min</span> Execute & Verify Output</div>
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h4>Run from build/ directory</h4>
+                        <pre>cd /mnt/c/Nvidia/cuinspect/build
+./cuinspect ../test.cubin</pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h4>Expected Output — Verify You See This:</h4>
+                        <pre style="color: var(--green);">=== ELF Header ===
+  Class: ELF64
+  Machine: EM_NVPTX (0x9033)
+
+=== Sections ===
+  .nv.ptx              12.4 KB
+  .nv.sass              8.2 KB
+  .nv.info              1.1 KB
+  .debug_info          45.1 KB
+  .debug_abbrev        12.3 KB
+  .debug_line           8.7 KB
+
+=== Kernel: add_kernel ===
+  Registers: 16/thread
+  Shared Mem: 0 B/block
+  Theoretical Occupancy: 100% (sm_90)
+
+=== DWARF Variables (add_kernel) ===
+  float* a   location: DW_OP_NVPTX_reg0 + DW_OP_NVPTX_lane_id (divergent)
+  float* b   location: DW_OP_NVPTX_reg1 + DW_OP_NVPTX_lane_id (divergent)
+  float* c   location: DW_OP_NVPTX_reg2 + DW_OP_NVPTX_lane_id (divergent)
+  int n      location: DW_OP_NVPTX_reg3 (uniform)
+  int i      location: DW_OP_NVPTX_reg4 + DW_OP_NVPTX_lane_id (divergent)
+
+=== Kernel: mul_kernel ===
+  Registers: 16/thread
+  Theoretical Occupancy: 100% (sm_90)
+  ... (similar variables)</pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h4>If Output Matches → SUCCESS! Take screenshot for records.</h4>
+                        <p>If errors: check <a href="#troubleshooting">Troubleshooting</a> below.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PHASE 4: GITHUB DEPLOY -->
+        <section>
+            <h2>Phase 4: Deploy to GitHub + GitHub Pages (20 min)</h2>
+            <div class="phase" data-phase="PHASE 4">
+                <div class="phase-title"><span class="phase-time">20 min</span> Push Code + Live Portfolio Page</div>
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h4>Initialize Git & Commit</h4>
+                        <pre>cd /mnt/c/Nvidia/cuinspect
+git init
+git add .
+git commit -m "CUDA Binary Inspector: ELF/DWARF/PTX analyzer for NVIDIA PTX Compiler Team application"</pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h4>Install GitHub CLI (if not installed)</h4>
+                        <pre># In WSL:
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+sudo apt update && sudo apt install gh</pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h4>Authenticate & Create Repo</h4>
+                        <pre>gh auth login
+# Follow prompts: GitHub.com → HTTPS → Login with browser
+
+gh repo create cuinspect --public --push</pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <div class="step-content">
+                        <h4>Enable GitHub Pages</h4>
+                        <ol style="padding-left: 1.5rem; color: var(--text-muted); line-height: 2;">
+                            <li>Go to: <code>https://github.com/YOUR_USERNAME/cuinspect</code></li>
+                            <li>Settings → Pages (left sidebar)</li>
+                            <li>Source: <strong>Deploy from a branch</strong></li>
+                            <li>Branch: <strong>main</strong> / <strong>/(root)</strong></li>
+                            <li>Save → Wait 1-2 min</li>
+                        </ol>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">5</div>
+                    <div class="step-content">
+                        <h4>Your Live URLs (replace YOUR_USERNAME):</h4>
+                        <pre>Portfolio Page: https://YOUR_USERNAME.github.io/cuinspect/
+Repo:           https://github.com/YOUR_USERNAME/cuinspect
+Project Explainer: https://YOUR_USERNAME.github.io/cuinspect/PROJECT_EXPLAINER.html</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PHASE 5: CV UPDATE -->
+        <section>
+            <h2>Phase 5: Update Your CV (10 min)</h2>
+            <div class="phase" data-phase="PHASE 5">
+                <div class="phase-title"><span class="phase-time">10 min</span> Add Project to Resume</div>
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h4>Copy This Exact Bullet (Top of Projects Section)</h4>
+                    </div>
+                </div>
+                <div class="cv-block">
+<pre><span style="color: var(--accent)">**CUDA Binary Inspector**</span> | C++, LLVM 18, ELF/DWARF, CUDA Driver API
+• Built a tool parsing NVIDIA CUDA binaries (ELF format) to extract embedded PTX/SASS sections and DWARF debug info
+• Implements section enumeration, kernel metadata analysis (registers, shared memory, theoretical occupancy per SM architecture)
+• Uses LLVM's Object library for robust ELF/DWARF parsing; demonstrates understanding of GPU binary layout and NVPTX-specific DWARF extensions (DW_OP_NVPTX_lane_id, DW_OP_NVPTX_warp_id, DW_OP_NVPTX_uniform)
+• Repository: https://github.com/YOUR_USERNAME/cuinspect
+• Live Demo: https://YOUR_USERNAME.github.io/cuinspect/</pre>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h4>Add to Skills Section</h4>
+                        <pre>Compiler Infrastructure: LLVM (IR, Object, DWARF), Clang
+GPU Programming: CUDA, PTX ISA, SASS, NVPTX Backend
+Binary Formats: ELF, DWARF v5, NVPTX Extensions
+Tools: CMake, Git, GitHub Actions, nvcc, nvdisasm, cuobjdump</pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h4>Save CV as PDF → Ready to Submit</h4>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PHASE 6: INTERVIEW PREP -->
+        <section>
+            <h2>Phase 6: Interview Prep Tonight (20 min)</h2>
+            <div class="phase" data-phase="PHASE 6">
+                <div class="phase-title"><span class="phase-time">20 min</span> Read & Memorize Key Talking Points</div>
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <div class="step-content">
+                        <h4>Open PROJECT_EXPLAINER.html in Browser</h4>
+                        <pre>start /mnt/c/Nvidia/cuinspect/PROJECT_EXPLAINER.html</pre>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <div class="step-content">
+                        <h4>Focus on These 5 Sections (Priority Order):</h4>
+                        <ol style="padding-left: 1.5rem; color: var(--text-muted); line-height: 2;">
+                            <li><strong>Section 6:</strong> Interview Q&A — memorize answers to 7 questions</li>
+                            <li><strong>Section 10:</strong> 2-Minute Talk Track — practice out loud 3x</li>
+                            <li><strong>Section 9:</strong> Quick Reference Card — memorize SM limits & DWARF ops</li>
+                            <li><strong>Section 11:</strong> Red Flags — know what NOT to say</li>
+                            <li><strong>Section 3:</strong> Architecture Diagram — can draw from memory</li>
+                        </ol>
+                    </div>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <div class="step-content">
+                        <h4>Key Numbers to Memorize</h4>
+                        <pre style="color: var(--orange);">sm_90 (H100): 64 warps/SM, 64K regs, 228KB shared, 32 blocks/SM
+Occupancy = min(warps, regs, shared, blocks) / 64 * 100%
+Max regs/thread: 255 | Warp size: 32</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TROUBLESHOOTING -->
+        <section id="troubleshooting">
+            <h2>Troubleshooting Quick Reference</h2>
+            <div class="grid">
+                <div class="card">
+                    <h4>🔴 "LLVMConfig.cmake not found"</h4>
+                    <p><code>find /usr -name "LLVMConfig.cmake"</code> → use that path in cmake -DLLVM_DIR=</p>
+                </div>
+                <div class="card">
+                    <h4>🔴 "nvcc: command not found"</h4>
+                    <p><code>sudo apt install nvidia-cuda-toolkit</code> or download from NVIDIA website</p>
+                </div>
+                <div class="card">
+                    <h4>🔴 "No DWARF sections found"</h4>
+                    <p>Must compile with <code>-g</code> flag: <code>nvcc -cubin -g -arch=sm_90</code></p>
+                </div>
+                <div class="card">
+                    <h4>🔴 "Permission denied on binary"</h4>
+                    <p><code>chmod +x build/cuinspect</code></p>
+                </div>
+                <div class="card">
+                    <h4>🔴 "EM_NVPTX unknown"</h4>
+                    <p>Need LLVM 18+. Check: <code>llvm-config --version</code></p>
+                </div>
+                <div class="card">
+                    <h4>🔴 "GitHub Pages not loading"</h4>
+                    <p>Wait 5 min after enabling. Check Actions tab for deploy status. Ensure index.html is in root.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FINAL CHECKLIST -->
+        <section>
+            <h2>Final Checklist Before Sleep</h2>
+            <ul class="checklist">
+                <li>✅ LLVM 18 + CUDA toolkit installed</li>
+                <li>✅ <code>cuinspect</code> binary builds successfully</li>
+                <li>✅ <code>test.cubin</code> created with <code>-g</code> flag</li>
+                <li>✅ Tool runs and shows PTX, SASS, DWARF sections</li>
+                <li>✅ Output shows kernel registers + occupancy calculation</li>
+                <li>✅ GitHub repo created and pushed</li>
+                <li>✅ GitHub Pages enabled and loading</li>
+                <li>✅ Portfolio page (index.html) accessible via URL</li>
+                <li>✅ PROJECT_EXPLAINER.html accessible via URL</li>
+                <li>✅ CV updated with project bullet + links</li>
+                <li>✅ CV saved as PDF</li>
+                <li>✅ Practiced 2-minute talk track out loud</li>
+                <li>✅ Memorized 7 interview Q&A answers</li>
+                <li>✅ Memorized SM_90 limits & NVPTX DWARF ops</li>
+            </ul>
+        </section>
+
+        <footer>
+            <p><strong>You have everything you need.</strong> Execute phases in order. Check off each item.</p>
+            <p>Project files location: <code>C:\Nvidia\cuinspect\</code></p>
+            <p>Good luck tomorrow! 🚀</p>
+        </footer>
+    </div>
+    <script>
+        // Checklist persistence
+        document.querySelectorAll('.checklist li').forEach(li => {
+            li.addEventListener('click', () => {
+                li.classList.toggle('done');
+                localStorage.setItem('checklist-' + li.textContent.trim(), li.classList.contains('done'));
+            });
+            const saved = localStorage.getItem('checklist-' + li.textContent.trim());
+            if (saved === 'true') li.classList.add('done');
+        });
+    </script>
+</body>
+</html>

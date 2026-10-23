@@ -1,0 +1,40 @@
+# Build directories
+build/
+out/
+bin/
+obj/
+
+# Compiled objects and executables
+*.o
+*.obj
+*.exe
+*.dll
+*.lib
+*.so
+*.a
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test files
+test.cu
+test.cubin
+test.ptx
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
