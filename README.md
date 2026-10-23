@@ -25,7 +25,7 @@ sudo apt install llvm-18-dev clang-18  # Ubuntu/WSL
 # winget install LLVM.LLVM               # Windows
 
 # 2. Build
-git clone https://github.com/YOUR_USERNAME/cuinspect
+git clone https://github.com/abhishek-ngu/cuinspect
 cd cuinspect
 mkdir build && cd build
 cmake .. -DLLVM_DIR=/usr/lib/llvm-18/lib/cmake/llvm
